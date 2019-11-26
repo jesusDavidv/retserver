@@ -4,47 +4,20 @@ const cryptr = new Cryptr('myTotalySecretKey');
 const _=require('underscore');
 const app = express();
 const Usuario=require('../models/usuario');
+const {verificaToken,verificaAdmin_Role}=require('../middlewares/autenticacion');
 
-app.get('/usuario', function (req, res) {
-  // para que la persona misma ingrese desde donde quire que muestre y hasta q limite
-   
-    let desde=req.query.desde||0;
-    desde=Number(desde); //esto lo tranforma en un numero
-    let limite = req.query.limite || 5;
-    limite = Number(limite);
-    //get o busqueda para llamar algun registro de la base de datos
-    Usuario.find({estado:true},'nombre email role estado google img')//filtracion de datos 
-    // para que muestre los siguentes datos se hace
-          .skip(desde)
-    //para limitar la busqueda sea hace
-          .limit(limite)
-          .exec((err,usuario)=>{    
-          
-            if(err){
-              return res.status(400).json({
-               ok:false,
-               err
-           });
-            };
-            //para contar registro utilizamos el count
-
-            Usuario.count({estado:true},(err,conteo)=>{
-              res.json({
-                ok:true,
-                usuario,
-                cuantos:conteo
-              });
-
-            });
-            
-       
-
-          });
+app.get('/usuario',verificaToken,(req, res) => {
+  
+  return res.json({
+    usuario: req.usuario,
+    nombre: req.usuario.nombre,
+    email: req.usuario.email,
+  });
 
   });
   
    
-  app.post('/usuario', function (req, res) {
+  app.post('/usuario',[verificaToken,verificaAdmin_Role], function (req, res) {
       let body=req.body;
 
     let usuario=new Usuario({
@@ -73,7 +46,7 @@ app.get('/usuario', function (req, res) {
      
     });
      
-  app.put('/usuario/:id', function (req, res) {
+  app.put('/usuario/:id',[verificaToken,verificaAdmin_Role], function (req, res) {
       let id=req.params.id;
       let body =_.pick(req.body,['nombre','email','img','role','estado']);
     
@@ -93,7 +66,7 @@ app.get('/usuario', function (req, res) {
       });
    });
    // Eliminar registro de la base de datos moogon 
-    app.delete('/usuario/:id', function (req, res) {
+    app.delete('/usuario/:id',[verificaToken,verificaAdmin_Role], function (req, res) {
 
       let id = req.params.id; //para obtener el id
       // Usuario.findByIdAndRemove(id,(err,usuarioBorrado)=>{
